@@ -1,13 +1,12 @@
 import { useMemo } from 'react'
 import { seedSessions } from '@/data/seedSessions'
 import { recommend } from '@/features/planner/recommendationEngine'
-import type { RecommendationInput } from '@/features/planner/types'
-import type { Recommendation } from '@/features/planner/types'
-import type { LocalSession } from './useLocalSessions'
+import type { RecommendationInput, Recommendation } from '@/features/planner/types'
+import type { TrainingSession } from '@/lib/queries/sessions'
 
 export function useRecommendation(
   blockId: string | null,
-  recentSessions: LocalSession[],
+  recentSessions: TrainingSession[],
 ): Recommendation | null {
   return useMemo(() => {
     if (!blockId) return null

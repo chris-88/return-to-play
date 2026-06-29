@@ -18,7 +18,7 @@ import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { seedSessions } from '@/data/seedSessions'
 import { useCurrentBlock } from '@/hooks/useCurrentBlock'
-import { useLocalSessions } from '@/hooks/useLocalSessions'
+import { useAddSession, useRecentSessions } from '@/hooks/useRecentSessions'
 import { useRecommendation } from '@/hooks/useRecommendation'
 import { categoryColour, categoryLabel } from '@/lib/categories'
 import type { SessionExercise, SessionVersion } from '@/types/training'
@@ -66,8 +66,8 @@ export default function TrainPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const block = useCurrentBlock()
-  const { recentSessions, addSession } = useLocalSessions()
-  const recent = recentSessions(10)
+  const { data: recent = [] } = useRecentSessions(10)
+  const addSessionMutation = useAddSession()
   const recommendation = useRecommendation(block?.id ?? null, recent)
 
   const preselectedId = (location.state as { sessionId?: string } | null)?.sessionId
@@ -120,22 +120,32 @@ export default function TrainPage() {
     const today = new Date().toISOString().split('T')[0]
     const dur = parseInt(duration) || selectedSession.estimated_duration_min
 
-    addSession({
-      date: today,
-      block_id: block.id,
-      session_code: selectedSession.session_code,
-      session_name: selectedSession.name,
-      session_category: selectedSession.category,
-      duration_min: dur,
-      session_rpe: sessionRpe,
-      completed_status: 'completed',
-      pain_area: painDuring ? painArea || null : null,
-      pain_score: painDuring ? painScore : null,
-      notes: notes || null,
-    })
-
-    toast.success(`${selectedSession.name} logged!`)
-    navigate('/')
+    addSessionMutation.mutate(
+      {
+        date: today,
+        block_id: block.id,
+        session_code: selectedSession.session_code,
+        session_name: selectedSession.name,
+        session_category: selectedSession.category,
+        duration_min: dur,
+        session_rpe: sessionRpe,
+        completed_status: 'completed',
+        pain_during_session: painDuring,
+        pain_area: painDuring ? painArea || null : null,
+        pain_score: painDuring ? painScore : null,
+        notes: notes || null,
+        planned_or_unplanned: 'planned',
+      },
+      {
+        onSuccess: () => {
+          toast.success(`${selectedSession.name} logged!`)
+          navigate('/')
+        },
+        onError: () => {
+          toast.error('Failed to save session. Please try again.')
+        },
+      },
+    )
   }
 
   if (!selectedSession) {
@@ -473,8 +483,13 @@ export default function TrainPage() {
         </CardContent>
       </Card>
 
-      <Button className="w-full" size="lg" onClick={submitSession}>
-        Save session
+      <Button
+        className="w-full"
+        size="lg"
+        onClick={submitSession}
+        disabled={addSessionMutation.isPending}
+      >
+        {addSessionMutation.isPending ? 'Saving…' : 'Save session'}
       </Button>
 
       <Button variant="ghost" className="w-full" onClick={() => setStep('session')}>

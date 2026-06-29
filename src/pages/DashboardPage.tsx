@@ -6,25 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { seedSessions } from '@/data/seedSessions'
 import { useCurrentBlock } from '@/hooks/useCurrentBlock'
-import { useLocalSessions } from '@/hooks/useLocalSessions'
+import { useRecentSessions } from '@/hooks/useRecentSessions'
 import { useRecommendation } from '@/hooks/useRecommendation'
-import { categoryLabel, categoryColour } from '@/lib/categories'
+import { categoryColour, categoryLabel } from '@/lib/categories'
 
 const ROLLING_DAYS = 10
 
 export default function DashboardPage() {
   const block = useCurrentBlock()
-  const { recentSessions } = useLocalSessions()
-  const recent = recentSessions(ROLLING_DAYS)
+  const { data: recent = [], isLoading, isError } = useRecentSessions(ROLLING_DAYS)
   const recommendation = useRecommendation(block?.id ?? null, recent)
 
   const today = new Date().toISOString().split('T')[0]
   const isUpcoming = block ? block.start_date > today : false
 
-  // Build rolling window summary for current block sessions
   const blockSessions = block ? seedSessions.filter((s) => s.block_id === block.id) : []
   const windowSummary = blockSessions.map((template) => {
-    const done = recent.filter((s) => s.session_category === template.category).length
+    const done = recent.filter(
+      (s: { session_category: string }) => s.session_category === template.category,
+    ).length
     return { template, done }
   })
 
@@ -51,7 +51,11 @@ export default function DashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {recommendation ? (
+          {isLoading ? (
+            <p className="text-muted-foreground text-sm">Loading…</p>
+          ) : isError ? (
+            <p className="text-destructive text-sm">Failed to load sessions.</p>
+          ) : recommendation ? (
             <>
               <div className="flex items-start justify-between gap-3">
                 <div>
