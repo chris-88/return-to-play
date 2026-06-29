@@ -57,23 +57,24 @@ npm run dev
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start local dev server |
-| `npm run build` | Type-check and build for production |
-| `npm run preview` | Serve the production build locally |
-| `npm run typecheck` | TypeScript type check |
-| `npm run lint` | Lint source files |
-| `npm run format` | Format with Prettier |
-| `npm run test` | Run tests |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run deploy` | Build and publish to gh-pages branch |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm run dev`           | Start local dev server               |
+| `npm run build`         | Type-check and build for production  |
+| `npm run preview`       | Serve the production build locally   |
+| `npm run typecheck`     | TypeScript type check                |
+| `npm run lint`          | Lint source files                    |
+| `npm run format`        | Format with Prettier                 |
+| `npm run test`          | Run tests                            |
+| `npm run test:coverage` | Run tests with coverage report       |
+| `npm run deploy`        | Build and publish to gh-pages branch |
 
 ## Deployment
 
 The app deploys as a static site to GitHub Pages. CI runs on every push to `main` and deploys automatically.
 
 Set the following repository secrets in GitHub → Settings → Secrets:
+
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
