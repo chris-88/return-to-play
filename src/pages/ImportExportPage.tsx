@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import PlanAdjustmentImport from '@/features/import/PlanAdjustmentImport'
+import WatchImport from '@/features/import/WatchImport'
 import { buildExportZip, buildSingleCsv, downloadBlob } from '@/lib/export'
 
 type SingleTable = 'checkins' | 'sessions' | 'exercises' | 'body_metrics' | 'watch_workouts'
@@ -113,6 +115,34 @@ export default function ImportExportPage() {
           ))}
         </div>
       </div>
+
+      <Separator />
+
+      {/* Import: watch workouts */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Import watch workouts</CardTitle>
+          <p className="text-muted-foreground text-xs">
+            Apple Health / Health Auto Export CSV format
+          </p>
+        </CardHeader>
+        <CardContent>
+          <WatchImport />
+        </CardContent>
+      </Card>
+
+      {/* Import: plan adjustments */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Import plan adjustments</CardTitle>
+          <p className="text-muted-foreground text-xs">
+            From a ChatGPT coach review — review and apply each change individually
+          </p>
+        </CardHeader>
+        <CardContent>
+          <PlanAdjustmentImport />
+        </CardContent>
+      </Card>
     </div>
   )
 }
