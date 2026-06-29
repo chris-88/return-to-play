@@ -1,13 +1,28 @@
 import { useMemo } from 'react'
 import { seedSessions } from '@/data/seedSessions'
 import { recommend } from '@/features/planner/recommendationEngine'
-import type { RecommendationInput, Recommendation } from '@/features/planner/types'
+import type { CheckinSnapshot, Recommendation, RecommendationInput } from '@/features/planner/types'
 import type { TrainingSession } from '@/lib/queries/sessions'
+
+export interface RecommendationOptions {
+  availableTimeMin?: 30 | 45 | 60 | 75
+  currentFeel?: 'good' | 'okay' | 'tired' | 'sore'
+  warningArea?: string | null
+  latestCheckin?: CheckinSnapshot | null
+}
 
 export function useRecommendation(
   blockId: string | null,
   recentSessions: TrainingSession[],
+  options: RecommendationOptions = {},
 ): Recommendation | null {
+  const {
+    availableTimeMin = 60,
+    currentFeel = 'good',
+    warningArea = null,
+    latestCheckin = null,
+  } = options
+
   return useMemo(() => {
     if (!blockId) return null
 
@@ -21,12 +36,12 @@ export function useRecommendation(
         category: s.session_category,
         session_load: s.session_load,
       })),
-      latestCheckin: null,
-      availableTimeMin: 60,
-      currentFeel: 'good',
-      warningArea: null,
+      latestCheckin,
+      availableTimeMin,
+      currentFeel,
+      warningArea: warningArea === 'none' ? null : warningArea,
     }
 
     return recommend(input, blockSessions)
-  }, [blockId, recentSessions])
+  }, [blockId, recentSessions, availableTimeMin, currentFeel, warningArea, latestCheckin])
 }

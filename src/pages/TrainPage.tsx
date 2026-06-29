@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import { seedSessions } from '@/data/seedSessions'
 import { useCurrentBlock } from '@/hooks/useCurrentBlock'
 import { useAddSession, useRecentSessions } from '@/hooks/useRecentSessions'
 import { useRecommendation } from '@/hooks/useRecommendation'
+import { useTodayCheckin, toCheckinSnapshot } from '@/hooks/useTodayCheckin'
 import { categoryColour, categoryLabel } from '@/lib/categories'
 import type { SessionExercise, SessionVersion } from '@/types/training'
 
@@ -67,19 +68,31 @@ export default function TrainPage() {
   const navigate = useNavigate()
   const block = useCurrentBlock()
   const { data: recent = [] } = useRecentSessions(10)
+  const { data: checkinData } = useTodayCheckin()
   const addSessionMutation = useAddSession()
-  const recommendation = useRecommendation(block?.id ?? null, recent)
-
-  const preselectedId = (location.state as { sessionId?: string } | null)?.sessionId
-  const initialSession =
-    seedSessions.find((s) => s.id === preselectedId) ?? recommendation?.session ?? seedSessions[0]
 
   const [step, setStep] = useState<Step>('pre')
-  const [selectedSession] = useState(initialSession)
   const [availableTime, setAvailableTime] = useState<AvailableTime>(60)
   const [feel, setFeel] = useState<Feel>('good')
   const [warningArea, setWarningArea] = useState('none')
   const [version, setVersion] = useState<SessionVersion>('full')
+
+  const latestCheckin = toCheckinSnapshot(checkinData ?? null)
+  const recommendation = useRecommendation(block?.id ?? null, recent, {
+    availableTimeMin: availableTime,
+    currentFeel: feel,
+    warningArea,
+    latestCheckin,
+  })
+
+  // Sync version to engine suggestion whenever pre-session inputs change (before session starts)
+  useEffect(() => {
+    if (step === 'pre' && recommendation) setVersion(recommendation.version)
+  }, [recommendation, step])
+
+  const preselectedId = (location.state as { sessionId?: string } | null)?.sessionId
+  const selectedSession =
+    seedSessions.find((s) => s.id === preselectedId) ?? recommendation?.session ?? seedSessions[0]
   const [setLogs, setSetLogs] = useState<Record<string, SetLog[]>>({})
   const [duration, setDuration] = useState('')
   const [sessionRpe, setSessionRpe] = useState(7)

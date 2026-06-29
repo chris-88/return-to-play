@@ -8,14 +8,33 @@ import { seedSessions } from '@/data/seedSessions'
 import { useCurrentBlock } from '@/hooks/useCurrentBlock'
 import { useRecentSessions } from '@/hooks/useRecentSessions'
 import { useRecommendation } from '@/hooks/useRecommendation'
+import { useTodayCheckin, toCheckinSnapshot } from '@/hooks/useTodayCheckin'
 import { categoryColour, categoryLabel } from '@/lib/categories'
 
 const ROLLING_DAYS = 10
 
+function ReadinessScore({ label, value }: { label: string; value: number | null }) {
+  if (value === null) return null
+  const colour =
+    value >= 7
+      ? 'text-green-600 dark:text-green-400'
+      : value >= 4
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-red-600 dark:text-red-400'
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`font-semibold tabular-nums ${colour}`}>{value}/10</span>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const block = useCurrentBlock()
   const { data: recent = [], isLoading, isError } = useRecentSessions(ROLLING_DAYS)
-  const recommendation = useRecommendation(block?.id ?? null, recent)
+  const { data: checkinData } = useTodayCheckin()
+  const latestCheckin = toCheckinSnapshot(checkinData ?? null)
+  const recommendation = useRecommendation(block?.id ?? null, recent, { latestCheckin })
 
   const today = new Date().toISOString().split('T')[0]
   const isUpcoming = block ? block.start_date > today : false
@@ -166,20 +185,46 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Recovery placeholder */}
+      {/* Recovery / today's check-in */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
-            Recovery
+            Today's readiness
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-sm">
-            No check-in yet today.{' '}
-            <Link to="/checkin" className="underline underline-offset-2">
-              Log your readiness
-            </Link>
-          </p>
+          {checkinData ? (
+            <div className="space-y-2">
+              <ReadinessScore label="Readiness" value={checkinData.readiness} />
+              <ReadinessScore label="Sleep quality" value={checkinData.sleep_quality} />
+              <ReadinessScore
+                label="Fatigue"
+                value={checkinData.fatigue ? 11 - checkinData.fatigue : null}
+              />
+              <ReadinessScore
+                label="Soreness"
+                value={checkinData.soreness ? 11 - checkinData.soreness : null}
+              />
+              {checkinData.pain_area && (
+                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300">
+                  Pain flagged: {checkinData.pain_area}
+                  {checkinData.pain_score ? ` (${checkinData.pain_score}/10)` : ''}
+                </div>
+              )}
+              <p className="text-muted-foreground pt-1 text-xs">
+                <Link to="/checkin" className="underline underline-offset-2">
+                  Edit today's check-in
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              No check-in yet today.{' '}
+              <Link to="/checkin" className="underline underline-offset-2">
+                Log your readiness
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
